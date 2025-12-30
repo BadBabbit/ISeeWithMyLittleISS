@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}ISS{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <p>hi :3</p>
+    <form method="post">
+        <label for="lat">Lat</label>
+        <input name="lat" id="lat" required>
+        <label for="lon">Lon</label>
+        <input type="lon" name="lon" id="lon" required>
+        <input type="submit" value="Enter">
+    </form>
+    {% if success == True %}
+        <p>received!</p>
+    {% endif %}
+{% endblock %}
