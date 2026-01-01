@@ -28,8 +28,13 @@ DELETE_ISS_DATA_STATEMENT = """
     );
 """
 
-class ISSApiError(Exception):
-    """ Custom exception for ISS API errors.
+class ISSApiTimeoutError(Exception):
+    """ Custom exception for ISS API timeout.
+    """
+    pass
+
+class ISSApiStatusError(Exception):
+    """ Custom exception for ISS API non-200 responses.
     """
     pass
 
