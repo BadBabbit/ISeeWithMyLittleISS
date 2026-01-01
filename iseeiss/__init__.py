@@ -37,13 +37,13 @@ def create_app(test_config=None):
 
     # initialise api daemon
     from .iss_api import iss_api_daemon
-    stop_event = threading.Event()
-    t = threading.Thread(target=iss_api_daemon, name='ISS API Daemon', args=(app, stop_event), daemon=True)
+    stop_iss_api = threading.Event()
+    t = threading.Thread(target=iss_api_daemon, name='ISS API Daemon', args=(app, stop_iss_api), daemon=True)
     t.start()
     
     # register shutdown handler that will be called on exit
     def shutdown_daemon():
-        stop_event.set()
+        stop_iss_api.set()
         t.join(timeout=10)
     
     atexit.register(shutdown_daemon)
