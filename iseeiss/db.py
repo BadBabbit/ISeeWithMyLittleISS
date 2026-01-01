@@ -12,9 +12,9 @@ def init_app(app):
     app.cli.add_command(init_db_command)
 
 def init_db():
-    db = get_db()
+    sql = get_db()
     with current_app.open_resource('schema.sql') as f:
-        db.executescript(f.read().decode('utf8'))
+        sql.executescript(f.read().decode('utf8'))
 
 @click.command('init-db')
 def init_db_command():
@@ -24,19 +24,18 @@ def init_db_command():
     click.echo('Initialized the database.')
 
 def get_db():
-    if 'db' not in g:
-        g.db = sqlite3.connect(
+    if 'sql' not in g:
+        g.sql = sqlite3.connect(
             current_app.config['DATABASE'],
             detect_types=sqlite3.PARSE_DECLTYPES
         )
-        g.db.row_factory = sqlite3.Row
-
-    return g.db
+        g.sql.row_factory = sqlite3.Row
+    return g.sql
 
 def close_db(e=None):
-    db = g.pop('db', None)
-    if db is not None:
-        db.close()
+    sql = g.pop('sql', None)
+    if sql is not None:
+        sql.close()
 
 def db(f):
     """ db wrapper that can be applied to any function to grant it access to a db cursor, and then automatically closes the connection after the function has finished executing.
