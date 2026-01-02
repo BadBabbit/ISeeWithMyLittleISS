@@ -8,8 +8,8 @@ def create_app(test_config=None):
     # initial config
     from .logging import configFromYaml
     configFromYaml()
-    app.logger.handlers.clear() # remove flask's default handler, otherwsie we get duplicate loggers
     app = Flask(__name__, instance_relative_config=True)
+    app.logger.handlers.clear() # remove flask's default handler, otherwsie we get duplicate loggers
     
     app.debug = True # TODO remove before deploying to prod
     app.config.from_mapping( # FIXME this should come from the config file
