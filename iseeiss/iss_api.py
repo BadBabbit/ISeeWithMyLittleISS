@@ -7,7 +7,7 @@ import time
 from flask import g
 from .config import ISS_API_URL, ISS_API_TIMEOUT, ISS_API_RATE_LIMIT, ISS_MAX_ROWS
 from .db import get_db, close_db
-from threading import Event
+from threading import Event, current_thread
 
 INSERT_ISS_DATA_STATEMENT = """
     INSERT INTO iss (timestamp, lat, lon)
@@ -68,8 +68,8 @@ def iss_api_daemon(app, stop_event):
             except Exception as e:
                 app.logger.error(f"Unexpected ISS API daemon error: {e}")
                 g.sql.rollback()
-            
-            # we use wait instead of sleep here so we can respond to stop_event immediately
-            stop_event.wait(ISS_API_RATE_LIMIT)
+            finally:
+                # we use wait instead of sleep here so we can respond to stop_event immediately
+                stop_event.wait(ISS_API_RATE_LIMIT)
         close_db()
-        app.logger.info("ISS API daemon terminated.")
+        app.logger.info(f"{current_thread().name} terminated.")
