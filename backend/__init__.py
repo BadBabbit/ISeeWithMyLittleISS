@@ -1,15 +1,18 @@
 import os
-from flask import Flask, g
+import sys
+from flask import Flask, g, request
 import threading
 import atexit
 import logging
 
 def create_app(test_config=None):
     # initial config
-    from .logging import configFromYaml
-    configFromYaml()
     app = Flask(__name__, instance_relative_config=True)
-    app.logger.handlers.clear() # remove flask's default handler, otherwsie we get duplicate loggers
+    from .logging import init_app, configFromYaml
+    init_app(app)
+    if 'clear-logs' not in sys.argv:
+        app.logger.handlers.clear() # remove flask's default handler, otherwsie we get duplicate loggers
+        configFromYaml(app)
     
     app.debug = True # TODO remove before deploying to prod
     app.config.from_mapping( # FIXME this should come from the config file
@@ -31,20 +34,22 @@ def create_app(test_config=None):
     from . import db
     db.init_app(app)
     from .views import iss
+    app.teardown_appcontext(db.close_db)
 
     # blueprints
     app.register_blueprint(iss.bp)
 
     # initialise api daemon
-    from .iss_api import iss_api_daemon
-    stop_iss_api = threading.Event()
-    t = threading.Thread(target=iss_api_daemon, name='ISS API Daemon', args=(app, stop_iss_api), daemon=True)
-    t.start()
+    if 'run' in sys.argv:
+        from .iss_api import iss_api_daemon
+        stop_iss_api = threading.Event()
+        t = threading.Thread(target=iss_api_daemon, name='ISS API Daemon', args=(app, stop_iss_api), daemon=True)
+        t.start()
+
+        # register shutdown handler that will be called on exit
+        def shutdown_daemon():
+            stop_iss_api.set()
+            t.join(timeout=10)
     
-    # register shutdown handler that will be called on exit
-    def shutdown_daemon():
-        stop_iss_api.set()
-        t.join(timeout=10)
-    
-    atexit.register(shutdown_daemon)
+        atexit.register(shutdown_daemon)
     return app

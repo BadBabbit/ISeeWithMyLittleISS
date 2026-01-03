@@ -7,7 +7,7 @@ iss:
 
 log:
   file:
-    name: "iseeiss.log"
+    name: "logs/iseeiss.log"
     level: "INFO"
     max_bytes: 1048576
     formatter: "default"

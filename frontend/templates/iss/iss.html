@@ -16,4 +16,10 @@
     {% if success == True %}
         <p>received!</p>
     {% endif %}
+    <h3>ISS locations:</h3>
+    <ul>
+    {% for point in points %}
+        <li><b>{{ point['datetime'] }}</b>: {{ point['lat'] }}, {{ point['lon'] }}</li>
+    {% endfor %}
+    </ul>
 {% endblock %}

@@ -42,7 +42,7 @@ def iss_api_daemon(app, stop_event):
     """
     with app.app_context():
         app.logger.info("ISS API daemon starting...")
-        get_db() # cant use decorator, as its called before the app context is set which causes errors with accessing g.
+        cur = get_db()
         while not stop_event.is_set():
             try:
                 request = requests.get(ISS_API_URL, timeout=ISS_API_TIMEOUT)
@@ -51,11 +51,11 @@ def iss_api_daemon(app, stop_event):
                     raise ISSApiTimeoutError(f"API timed out")
                 if request.status_code != 200:
                     raise ISSApiStatusError(f"API responded with status code {request.status_code}")
-                g.sql.execute(INSERT_ISS_DATA_STATEMENT, response)
-                row_count = g.sql.execute("SELECT COUNT(*) FROM iss;").fetchone()[0]
+                cur.execute(INSERT_ISS_DATA_STATEMENT, response)
+                row_count = cur.execute("SELECT COUNT(*) FROM iss;").fetchone()[0]
                 if row_count > ISS_MAX_ROWS:
-                    g.sql.execute(DELETE_ISS_DATA_STATEMENT, {"max_rows": ISS_MAX_ROWS})
-                g.sql.commit()
+                    cur.execute(DELETE_ISS_DATA_STATEMENT, {"max_rows": ISS_MAX_ROWS})
+                cur.commit()
                 app.logger.info("data successly pulled from API.")
             except ISSApiTimeoutError as e:
                 app.logger.warning(e)
@@ -63,11 +63,11 @@ def iss_api_daemon(app, stop_event):
                 app.logger.error(e)
             except (InterruptedError, KeyboardInterrupt):
                 app.logger.info("ISS API daemon interrupted")
-                g.sql.rollback()
+                cur.rollback()
                 break
             except Exception as e:
                 app.logger.error(f"Unexpected ISS API daemon error: {e}")
-                g.sql.rollback()
+                cur.rollback()
             finally:
                 # we use wait instead of sleep here so we can respond to stop_event immediately
                 stop_event.wait(ISS_API_RATE_LIMIT)
