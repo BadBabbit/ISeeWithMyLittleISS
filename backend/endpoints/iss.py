@@ -1,4 +1,4 @@
-""" Endpoints for ISS.
+""" Endpoints for all routes starting wth /iss.
 """
 from flask import (
     Blueprint,
