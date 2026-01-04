@@ -1,5 +1,6 @@
 import sqlite3
 import click
+from functools import wraps
 from flask import current_app, g
 
 def init_app(app):
@@ -72,6 +73,7 @@ def db(f):
         
         :param f: the wrapped function.
     """
+    @wraps(f)
     def wrapper(*args, **kwargs):
         current_app.logger.info(f"{f.__name__} invoked with db decorator. creating connection.")
         con = get_db()

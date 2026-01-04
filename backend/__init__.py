@@ -1,9 +1,8 @@
 import os
 import sys
-from flask import Flask, g, request
+from flask import Flask
 import threading
 import atexit
-import logging
 
 def create_app(test_config=None):
     # initial config
@@ -34,7 +33,6 @@ def create_app(test_config=None):
     from . import db
     db.init_app(app)
     from .views import iss
-    app.teardown_appcontext(db.close_db)
 
     # blueprints
     app.register_blueprint(iss.bp)
