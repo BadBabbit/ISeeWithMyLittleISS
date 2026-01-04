@@ -1,12 +1,14 @@
 import os
 import sys
 from flask import Flask
+from flask_cors import CORS
 import threading
 import atexit
 
 def create_app(test_config=None):
     # initial config
     app = Flask(__name__, instance_relative_config=True)
+    CORS(app) # so that frontend can access backend api
     from .logging import init_app, configFromYaml
     init_app(app)
     if 'clear-logs' not in sys.argv:
