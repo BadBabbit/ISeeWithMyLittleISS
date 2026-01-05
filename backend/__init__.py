@@ -14,8 +14,8 @@ def create_app(test_config=None):
     if 'clear-logs' not in sys.argv:
         app.logger.handlers.clear() # remove flask's default handler, otherwsie we get duplicate loggers
         configFromYaml(app)
-    
-    app.debug = True # TODO remove before deploying to prod
+
+    app.debug = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     app.config.from_mapping( # FIXME this should come from the config file
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'iseeiss.sqlite'),
@@ -34,9 +34,9 @@ def create_app(test_config=None):
     # initialise database
     from . import db
     db.init_app(app)
-    from .views import iss
 
     # blueprints
+    from .endpoints import iss
     app.register_blueprint(iss.bp)
 
     # initialise api daemon
