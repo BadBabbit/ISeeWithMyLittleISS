@@ -19,6 +19,12 @@ services:
       - "3000:3000"
 
   flask:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/dockerfile
+    volumes:
+    - ./backend:/app/backend
     ports:
       - "5000:5000"
+    environment:
+    - FLASK_DEBUG=true
