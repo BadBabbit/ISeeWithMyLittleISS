@@ -3,7 +3,10 @@ import { StatusResponse } from "../../api/status/types"
 import { fetchStatus } from "../../api/status/api"
 
 const StatusLight = () => {
-    return 
+    return (
+        <>
+        </>
+    )
 }
 
 export default StatusLight

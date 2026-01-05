@@ -5,6 +5,6 @@ export async function fetchStatus(): Promise<StatusResponse> {
     if (!response.ok) {
         throw new Error(`ISS API error: ${response.status}`);
     }
-    const data: StatusResponse = await response.json(); // why are we awaiting for json response body?
+    const data: StatusResponse = await response.json();
     return data;
 }
