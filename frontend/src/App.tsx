@@ -6,11 +6,14 @@ import Banner from './components/Banner/Banner'
 import Navbar from './components/Navbar/Navbar'
 import Home from './pages/Home';
 import About from './pages/About';
+import { RoutingProvider } from './contexts/RoutingContext';
 
 function App() {
   return (
     <BrowserRouter>
-      <Banner />
+      <RoutingProvider>
+        <Banner />
+      </RoutingProvider>
     </BrowserRouter>
   );
 }
