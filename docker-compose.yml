@@ -28,6 +28,7 @@ services:
       dockerfile: backend/dockerfile
     volumes:
     - ./backend:/app/backend
+    - ./instance:/app/instance
     ports:
       - "5000:5000"
     environment:
