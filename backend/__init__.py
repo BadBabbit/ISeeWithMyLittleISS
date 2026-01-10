@@ -36,8 +36,9 @@ def create_app(test_config=None):
     db.init_app(app)
 
     # blueprints
-    from .endpoints import iss
+    from .endpoints import iss, status
     app.register_blueprint(iss.bp)
+    app.register_blueprint(status.bp)
 
     # initialise api daemon
     if 'run' in sys.argv:
