@@ -51,6 +51,8 @@ def create_app(test_config=None):
         def shutdown_daemon():
             stop_iss_api.set()
             t.join(timeout=10)
-    
         atexit.register(shutdown_daemon)
+
+    atexit.register(app.logger.warning, 'SERVER SHUTTING DOWN.')
     return app
+    
