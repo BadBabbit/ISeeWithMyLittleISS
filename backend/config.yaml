@@ -2,7 +2,7 @@ iss:
   api:
     url: "https://api.wheretheiss.at/v1/satellites/25544"
     timeout: 10
-    rate_limit: 5
+    rate_limit: 15
   max_rows: 10
 
 log:
