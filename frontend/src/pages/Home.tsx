@@ -4,7 +4,9 @@ export default function Home () {
     return (
         <>
             <p>Hello home!</p>
-            <GlobeComponent />
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <GlobeComponent />
+            </div>
         </>
     )
 }
