@@ -5,21 +5,21 @@
 import requests
 import time
 from flask import g
-from .config import ISS_API_URL, ISS_API_TIMEOUT, ISS_API_RATE_LIMIT, ISS_MAX_ROWS
+from .config import ISS_API_URL, ISS_API_TIMEOUT, ISS_API_RATE_LIMIT
 from .db import get_db, close_db
 from threading import Event, current_thread
 
 INSERT_ISS_DATA_STATEMENT = """
-    INSERT INTO iss (timestamp, tle_line_1, tle_line_2)
-    VALUES (:timestamp, :tle_line_1, :tle_line_2);
+    INSERT INTO iss (request_timestamp, tle_timestamp, tle_line_1, tle_line_2)
+    VALUES (:request_timestamp, :tle_timestamp, :tle_line_1, :tle_line_2);
 """
 
 DELETE_ISS_DATA_STATEMENT = """
     DELETE FROM iss 
-    WHERE timestamp NOT IN (
-        SELECT timestamp
+    WHERE request_timestamp NOT IN (
+        SELECT request_timestamp
         FROM iss
-        ORDER BY timestamp DESC
+        ORDER BY request_timestamp DESC
         LIMIT :max_rows
     );
 """
@@ -42,6 +42,7 @@ def get_iss_tle(app, cur):
         :returns: None
     """
     try:
+        current_time = int(time.time())
         request = requests.get(ISS_API_URL + "/satellites/25544/tles", timeout=ISS_API_TIMEOUT)
         response = request.json()
         if response is None:
@@ -49,13 +50,14 @@ def get_iss_tle(app, cur):
         if request.status_code != 200:
             raise ISSApiStatusError(f"API responded with status code {request.status_code}")
         cur.execute(INSERT_ISS_DATA_STATEMENT, {
-            "timestamp": response["timestamp"],
+            "request_timestamp": current_time,
+            "tle_timestamp": response["tle_timestamp"],
             "tle_line_1": response["line1"],
             "tle_line_2": response["line2"]
         })
         row_count = cur.execute("SELECT COUNT(*) FROM iss;").fetchone()[0]
         if row_count >= 2:
-            cur.execute(DELETE_ISS_DATA_STATEMENT, {"max_rows": ISS_MAX_ROWS})
+            cur.execute(DELETE_ISS_DATA_STATEMENT, {"max_rows": 1})
         cur.commit()
         app.logger.info("TLE data successly pulled from API.")
     except ISSApiTimeoutError as e:
