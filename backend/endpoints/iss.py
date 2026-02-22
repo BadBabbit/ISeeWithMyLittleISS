@@ -50,7 +50,10 @@ def iss_tle(sql):
     result = sql.execute("SELECT * FROM iss ORDER BY request_timestamp DESC LIMIT 1;").fetchone()
     if result is None or len(result) == 0:
         abort(500, 'Server could not retrieve TLE data from database')
-    return jsonify(dict(result).pop('id')) # pop id since it is not relevant to the frontend
+    data = dict(result)
+    data.pop('id')
+    data.pop('request_timestamp')
+    return jsonify(data) # pop id since it is not relevant to the frontend
 
 @bp.route('/trajectory', methods=["GET"])
 @db
