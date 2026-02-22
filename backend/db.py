@@ -17,6 +17,7 @@ def init_db():
     con = get_db()
     with current_app.open_resource('schema.sql') as f:
         con.executescript(f.read().decode('utf8'))
+    con.commit()
     con.close()
 
 def get_iss_rows():
@@ -25,9 +26,16 @@ def get_iss_rows():
     con.close()
     return rows
 
+def get_iss_columns():
+    con = get_db()
+    columns = [r["name"] for r in con.execute("PRAGMA table_info(iss);").fetchall()]
+    con.close()
+    return columns
+
 def clear_db():
     sql = get_db()
     sql.execute("DELETE FROM iss;")
+    sql.commit()
     sql.close()
 
 @click.command('init-db')
@@ -39,10 +47,12 @@ def init_db_command():
 
 @click.command('view-iss')
 def view_iss_command():
+    columns = get_iss_columns()
+    click.echo(",\t".join(columns))
+
     rows = get_iss_rows()
-    click.echo(f"id,\ttimestamp,\t\tlat,\tlon")
     for r in rows:
-        click.echo(f"{r['id']},\tr{r['timestamp']},\t\t{r['lat']},\t{r['lon']}")
+        click.echo(",\t".join(str(r[c]) for c in columns))
 
 @click.command('clear-db')
 def clear_db_command():
