@@ -1,9 +1,8 @@
 iss:
   api:
-    url: "https://api.wheretheiss.at/v1/satellites/25544"
+    url: "https://api.wheretheiss.at/v1"
     timeout: 10
     rate_limit: 30
-  max_rows: 10
 
 log:
   file:
@@ -12,7 +11,7 @@ log:
     max_bytes: 1048576
     formatter: "default"
   console:
-    level: "INFO"
+    level: "DEBUG"
     stream: "ext://sys.stdout"
     formatter: "default"
   format: "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
