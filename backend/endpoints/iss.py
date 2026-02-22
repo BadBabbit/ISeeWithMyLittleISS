@@ -33,15 +33,24 @@ def iss_intercept(sql):
     return
     
 
-@bp.route('/location', methods=["GET"])
+@bp.route('/tle', methods=["GET"])
 @db
-def iss_location(sql):
-    """ Gets the last known earth coordinates of the ISS.
+def iss_tle(sql):
+    """ Gets the most recently retrieved TLE data of the ISS.
 
         :param sql: the sql cursor, provided by the @db decorator.
+        :returns: a json object with the following format:
+        {
+            "id": 1,
+            "tle_timestamp": 1686110400,
+            "tle_line_1": "1 25544U 98067A   24181.51782528  .00016717  00000+0  10270-3 0 00000",
+            "tle_line_2": "2 25544  51.6447  21.4417 0007418  90.9335 269.2012 15.50000000    11"
+        }
     """
-    # TODO
-    return
+    result = sql.execute("SELECT * FROM iss ORDER BY request_timestamp DESC LIMIT 1;").fetchone()
+    if result is None or len(result) == 0:
+        abort(500, 'Server could not retrieve TLE data from database')
+    return jsonify(dict(result).pop('id')) # pop id since it is not relevant to the frontend
 
 @bp.route('/trajectory', methods=["GET"])
 @db
@@ -52,7 +61,9 @@ def iss_trajectory(sql):
     response = []
     for r in result:
         r = dict(r)
-        r['datetime'] = str(datetime.fromtimestamp(r['timestamp']))
-        r.pop('timestamp')
+        r['datetime'] = str(datetime.fromtimestamp(r.pop('tle_timestamp')))
+        # pop id and request_timestamp since they are not relevant to the frontend
+        r.pop('id')
+        r.pop('request_timestamp')
         response.append(r)
     return jsonify(response)
