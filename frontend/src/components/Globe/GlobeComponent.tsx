@@ -102,6 +102,7 @@ const GlobeComponent = () => {
                 atmosphereColor="lightskyblue"
                 globeImageUrl={earthImage}
                 particlesData={particlesData}
+                particlesSize={1.8}
                 particleLat="lat"
                 particleLng="lon"
                 particleAltitude="alt"
