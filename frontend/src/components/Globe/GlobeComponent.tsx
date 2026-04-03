@@ -76,20 +76,87 @@ const GlobeComponent = () => {
         return () => clearInterval(interval);
     }, [satrec]);
 
-    const particlesData: SatData[][] = React.useMemo(() => {
+
+
+
+    // Ghost satellites: use a virtual time that advances at GHOST_SPEED_MULTIPLIER
+    const GHOST_SPEED_MULTIPLIER = 100;
+    const GHOST_INTERVAL_SEC = 10; // distance between each ghost
+    const GHOST_WINDOW_SEC = 900; // ghost line length
+    const NUM_GHOSTS = Math.floor((2 * GHOST_WINDOW_SEC) / GHOST_INTERVAL_SEC);
+
+    // Persistent ghost offsets (in seconds)
+    const [ghostOffsets, setGhostOffsets] = React.useState<number[]>(() => {
+        // Evenly space ghosts from -GHOST_WINDOW_SEC to +GHOST_WINDOW_SEC (exclusive)
+        return Array.from({ length: NUM_GHOSTS }, (_, i) => -GHOST_WINDOW_SEC + i * GHOST_INTERVAL_SEC);
+    });
+
+    // Animation: update ghost offsets each frame
+    React.useEffect(() => {
+        let animationFrame: number;
+        let lastRealTime = Date.now();
+        const animate = () => {
+            const now = Date.now();
+            const deltaReal = (now - lastRealTime) / 1000; // seconds
+            lastRealTime = now;
+            setGhostOffsets(prevOffsets => prevOffsets.map(offset => {
+                let newOffset = offset + deltaReal * GHOST_SPEED_MULTIPLIER;
+                // Wrap around if out of window
+                if (newOffset > GHOST_WINDOW_SEC) newOffset -= 2 * GHOST_WINDOW_SEC;
+                if (newOffset < -GHOST_WINDOW_SEC) newOffset += 2 * GHOST_WINDOW_SEC;
+                return newOffset;
+            }));
+            animationFrame = requestAnimationFrame(animate);
+        };
+        animationFrame = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(animationFrame);
+    }, []);
+
+    // Reset ghost offsets when TLE changes
+    React.useEffect(() => {
+        setGhostOffsets(Array.from({ length: NUM_GHOSTS }, (_, i) => -GHOST_WINDOW_SEC + i * GHOST_INTERVAL_SEC));
+    }, [issData, satrec]);
+
+    const particlesData: (SatData & { size: number; color: string })[] = React.useMemo(() => {
         if (!issData || !satrec || !issPosition) {
             return [];
         }
-
-        return [[{
-            tle_line_1: issData.tle_line_1,
-            tle_line_2: issData.tle_line_2,
-            satrec,
-            lat: issPosition.lat,
-            lon: issPosition.lon,
-            alt: issPosition.alt
-        }]];
-    }, [issData, satrec, issPosition]);
+        // Main ISS particle (large, yellow)
+        const particles: (SatData & { size: number; color: string })[] = [
+            {
+                tle_line_1: issData.tle_line_1,
+                tle_line_2: issData.tle_line_2,
+                satrec,
+                lat: issPosition.lat,
+                lon: issPosition.lon,
+                alt: issPosition.alt,
+                size: 3.2,
+                color: 'yellow'
+            }
+        ];
+        // Ghost satellites (smaller, white), persistent and wrapped within ±10 minutes
+        for (let i = 0; i < ghostOffsets.length; i++) {
+            const offsetSec = ghostOffsets[i];
+            if (offsetSec === 0) continue; // skip the ISS itself
+            const ghostTime = new Date(Date.now() + offsetSec * 1000);
+            const gmst = gstime(ghostTime);
+            const eci = propagate(satrec, ghostTime);
+            if (eci?.position) {
+                const gdPos = eciToGeodetic(eci.position, gmst);
+                particles.push({
+                    tle_line_1: issData.tle_line_1,
+                    tle_line_2: issData.tle_line_2,
+                    satrec,
+                    lat: radiansToDegrees(gdPos.latitude),
+                    lon: radiansToDegrees(gdPos.longitude),
+                    alt: gdPos.height / EARTH_RADIUS_KM,
+                    size: 1.1,
+                    color: 'white'
+                });
+            }
+        }
+        return particles;
+    }, [issData, satrec, issPosition, ghostOffsets]);
 
     return (
         <div className={styles.globeContainer}>
@@ -101,8 +168,9 @@ const GlobeComponent = () => {
                 showAtmosphere={true}
                 atmosphereColor="lightskyblue"
                 globeImageUrl={earthImage}
-                particlesData={particlesData}
-                particlesSize={1.8}
+                particlesData={[particlesData]}
+                particlesSize={(d: any) => d.size}
+                particlesColor={(d: any) => d.color}
                 particleLat="lat"
                 particleLng="lon"
                 particleAltitude="alt"
