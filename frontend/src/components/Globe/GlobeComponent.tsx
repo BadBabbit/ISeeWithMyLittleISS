@@ -117,45 +117,46 @@ const GlobeComponent = () => {
         setGhostOffsets(Array.from({ length: NUM_GHOSTS }, (_, i) => -GHOST_WINDOW_SEC + i * GHOST_INTERVAL_SEC));
     }, [issData, satrec]);
 
-    const particlesData: (SatData & { size: number; color: string })[] = React.useMemo(() => {
+    // particlesSize/particlesColor accessors receive the group (sub-array), not individual particles,
+    // so size/colour are attached to the group arrays via Object.assign.
+    const particlesData = React.useMemo(() => {
         if (!issData || !satrec || !issPosition) {
             return [];
         }
-        // Main ISS particle (large, yellow)
-        const particles: (SatData & { size: number; color: string })[] = [
-            {
+
+        const issGroup = Object.assign(
+            [{
                 tle_line_1: issData.tle_line_1,
                 tle_line_2: issData.tle_line_2,
                 satrec,
                 lat: issPosition.lat,
                 lon: issPosition.lon,
                 alt: issPosition.alt,
-                size: 3.2,
-                color: 'yellow'
-            }
-        ];
-        // Ghost satellites (smaller, white), persistent and wrapped within ±10 minutes
+            }],
+            { size: 3.2, color: 'white' }
+        );
+
+        const ghostParticles: SatData[] = [];
         for (let i = 0; i < ghostOffsets.length; i++) {
             const offsetSec = ghostOffsets[i];
-            if (offsetSec === 0) continue; // skip the ISS itself
             const ghostTime = new Date(Date.now() + offsetSec * 1000);
             const gmst = gstime(ghostTime);
             const eci = propagate(satrec, ghostTime);
             if (eci?.position) {
                 const gdPos = eciToGeodetic(eci.position, gmst);
-                particles.push({
+                ghostParticles.push({
                     tle_line_1: issData.tle_line_1,
                     tle_line_2: issData.tle_line_2,
                     satrec,
                     lat: radiansToDegrees(gdPos.latitude),
                     lon: radiansToDegrees(gdPos.longitude),
                     alt: gdPos.height / EARTH_RADIUS_KM,
-                    size: 1.1,
-                    color: 'white'
                 });
             }
         }
-        return particles;
+        const ghostGroup = Object.assign(ghostParticles, { size: 1.1, color: 'yellow' });
+
+        return [issGroup, ghostGroup];
     }, [issData, satrec, issPosition, ghostOffsets]);
 
     return (
@@ -168,7 +169,7 @@ const GlobeComponent = () => {
                 showAtmosphere={true}
                 atmosphereColor="lightskyblue"
                 globeImageUrl={earthImage}
-                particlesData={[particlesData]}
+                particlesData={particlesData}
                 particlesSize={(d: any) => d.size}
                 particlesColor={(d: any) => d.color}
                 particleLat="lat"
