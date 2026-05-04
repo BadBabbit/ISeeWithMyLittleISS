@@ -16,7 +16,7 @@ export default function Home () {
         <>
             <p>Hello home!</p>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <GlobeComponent />
+                <GlobeComponent onCoordinatesSelected={handleLocationRetrieved} />
             </div>
             <MyLocationButton />
         </>
